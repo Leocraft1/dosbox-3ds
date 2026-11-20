@@ -4,4 +4,4 @@
 
 Continuation of <https://github.com/MrHuu/dosbox-3ds> using DOSBox-Staging instead of original DOSBox SVM.
 
-Yet to be developed.
+Development is in progress...
