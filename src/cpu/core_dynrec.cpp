@@ -141,6 +141,20 @@ static_assert(offsetof(core_dynrec_t, readdata) % sizeof(uint32_t) == 0,
 #elif C_TARGET_CPU_ARM
 #include "core_dynrec/risc_armv8le.h"
 
+#elif C_TARGET_CPU_ARM32
+// 32-bit ARM (e.g. ARMv6K/ARM11 MPCore on the Nintendo 3DS). Not part of
+// dosbox-staging's own supported-architecture list (see CMakeLists.txt,
+// which only recognises x86_64/aarch64 and fails configuration for any
+// other CMAKE_SYSTEM_PROCESSOR) - this branch only exists for builds that
+// bypass that CMake graph entirely and define C_TARGET_CPU_ARM32 directly
+// in a platform-specific config header, as the 3DS build does. The
+// generated-code backend itself (risc_armv4le.h and its -o3/-thumb*
+// companions) is otherwise-unmodified code still actively maintained in
+// DOSBox-X (joncampbell123/dosbox-x, src/cpu/core_dynrec/), confirmed
+// byte-identical to the file used by the abandoned MrHuu/dosbox-3ds 3DS
+// port at the time this was ported (see MIGRATION.md).
+#include "core_dynrec/risc_armv4le.h"
+
 #else
 #error "Unsupported target CPU"
 #endif
