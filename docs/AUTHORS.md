@@ -1,8 +1,7 @@
-Current DOSBox Staging Core Team:
+# Current DOSBox Staging Core Team:
 
 - John Novak <john@johnnovak.net>
 - Kirk Klobe [kklobe] <kklobe@gmail.com>
-
 
 Former DOSBox Staging Core Team members:
 
@@ -12,12 +11,10 @@ Former DOSBox Staging Core Team members:
 - Roman Standzikowski [FeralChild64]
 - nemo93
 
-
 Original DOSBox Staging founders:
 
 - Patryk Obara [dreamer] <dreamer.tan@gmail.com>
 - kcgen
-
 
 The project is continuation of DOSBox project, authored by:
 
