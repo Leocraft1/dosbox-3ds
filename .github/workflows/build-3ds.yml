@@ -1,0 +1,72 @@
+name: Build 3DS binaries
+
+# Builds two artifacts on every push/PR, as agreed:
+#   - dosbox-3ds-legacy.3dsx  -> Old 3DS + New 3DS (compatibility clock, 80MB)
+#   - dosbox-3ds-n3ds.3dsx    -> New 3DS exclusive (804MHz, 178MB)
+#
+# Uses the official devkitPro devkitARM container, which is the standard
+# approach for 3DS homebrew CI (ships devkitARM + libctru + makerom +
+# 3dsxtool preinstalled, avoids reinstalling the toolchain on every run).
+#
+# Status: scaffold. The actual CMake target(s) this invokes do not exist yet
+# (Fase 1 of the migration); update the build steps once the dedicated
+# devkitARM target lands. Until then this workflow will fail at the build
+# step by design - it documents the intended CI shape, not a working build.
+
+on:
+  push:
+    branches: [ "staging-port" ]
+  pull_request:
+    branches: [ "staging-port" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.profile }})
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitarm:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: legacy
+            artifact_name: dosbox-3ds-legacy
+            rsf: platform/ctr/rsf/dosbox-3ds.legacy.rsf
+          - profile: n3ds
+            artifact_name: dosbox-3ds-n3ds
+            rsf: platform/ctr/rsf/dosbox-3ds.n3ds.rsf
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure (${{ matrix.profile }})
+        env:
+          DEVKITARM: /opt/devkitpro/devkitARM
+          DEVKITPRO: /opt/devkitpro
+        run: |
+          cmake -B build-${{ matrix.profile }} \
+            -DCMAKE_TOOLCHAIN_FILE=toolchain/devkitarm-3ds.cmake \
+            -DCTR_PROFILE=${{ matrix.profile }} \
+            -DCTR_RSF=${{ matrix.rsf }}
+
+      - name: Build
+        run: cmake --build build-${{ matrix.profile }} --parallel
+
+      - name: Rename output
+        run: |
+          mkdir -p dist
+          cp build-${{ matrix.profile }}/dosbox-3ds.3dsx \
+             dist/${{ matrix.artifact_name }}.3dsx
+          cp build-${{ matrix.profile }}/dosbox-3ds.smdh \
+             dist/${{ matrix.artifact_name }}.smdh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/
+          if-no-files-found: error
