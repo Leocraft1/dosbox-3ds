@@ -1,0 +1,30 @@
+--- a/src/dosbox_config.h.in.cmake
++++ b/src/dosbox_config.h.in.cmake
+@@ -41,6 +41,27 @@
+ #cmakedefine01 C_TARGET_CPU_ARM
+ #cmakedefine01 C_TARGET_CPU_X86
+ 
++// 32-bit ARM (e.g. ARMv6K/ARM11 on the Nintendo 3DS) - distinct from
++// C_TARGET_CPU_ARM, which in this codebase means AArch64 only (see
++// src/cpu/core_dynrec.cpp, which only pairs C_TARGET_CPU_ARM with the
++// AArch64-only core_dynrec/risc_armv8le.h backend). Not part of
++// dosbox-staging's own supported-architecture list; see MIGRATION.md.
++#cmakedefine01 C_TARGET_CPU_ARM32
++
++#if C_TARGET_CPU_ARM32
++// risc_armv4le.h (ported from DOSBox-X) still uses the older,
++// DOSBox-classic numeric C_TARGETCPU enum internally to choose between
++// its -o3.h/-thumb*.h variants, rather than the boolean C_TARGET_CPU_ARM32
++// above. Both symbols below MUST be defined as distinct integers - if
++// either is left to the preprocessor's implicit 0 for an undefined
++// identifier, "#if C_TARGETCPU == ARMV7LE" silently becomes "0 == 0" and
++// wrongly selects the ARMv7 code path on this ARMv6K target. See
++// GLUE_CHECKLIST.md for how this was found (DOSBox-X deliberately
++// excludes ARMV6LE from that optimisation).
++#define ARMV7LE 1
++#define C_TARGETCPU 0
++#endif
++
+ // Define to 1 if target CPU supports unaligned memory access
+ #cmakedefine01 C_UNALIGNED_MEMORY
+ 

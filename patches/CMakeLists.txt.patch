@@ -1,0 +1,62 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -283,6 +283,7 @@
+                           HAVE_BUILTIN_CLEAR_CACHE)
+ 
+ set(C_TARGET_CPU_ARM    OFF)
++set(C_TARGET_CPU_ARM32  OFF)
+ set(C_TARGET_CPU_X86    OFF)
+ 
+ option(OPT_FORCE_DYNREC "Force DYNREC dynamic recompiler (not x86-64 optimized)" OFF)
+@@ -315,6 +316,34 @@
+   set(C_FPU_X86          OFF)
+   set(C_UNALIGNED_MEMORY OFF)
+ 
++elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "arm")
++  # 32-bit ARM (ARMv6K/ARM11 MPCore on the Nintendo 3DS). Not part of
++  # dosbox-staging's own supported-architecture list upstream - this
++  # branch exists only for the 3DS cross-build, which reaches here via
++  # toolchain/devkitarm-3ds.cmake explicitly setting
++  # CMAKE_SYSTEM_PROCESSOR to "arm" (not "arm64"/"aarch64"). See
++  # MIGRATION.md and GLUE_CHECKLIST.md for why this is a distinct case
++  # from C_TARGET_CPU_ARM (which in this codebase means AArch64 only,
++  # confirmed via src/cpu/core_dynrec.cpp only including
++  # core_dynrec/risc_armv8le.h for it) and from the generated-code
++  # backend this selects (core_dynrec/risc_armv4le.h, not risc_armv8le.h).
++
++  set(C_TARGET_CPU_ARM32  ON)
++
++  set(C_DYNAMIC_X86      OFF)
++  set(C_DYNREC           ON)
++  set(C_FPU_X86          OFF)
++  set(C_UNALIGNED_MEMORY OFF)
++  # Keep the whole JIT cache permanently RWX (one dyn_mem_set_access(...,
++  # true) call at allocation, see dyn_cache.h's __3DS__ branch) rather
++  # than toggling per page: the 3DS already needs a privileged syscall
++  # escalation just to get RWX once (ctr_memory.c) - there is no simple,
++  # cheap per-page W^X primitive to toggle on this platform, so paying for
++  # that escalation repeatedly would be strictly worse with no safety
++  # benefit (the escalation itself, not per-page toggling, is what's
++  # actually guarding anything here).
++  set(C_PER_PAGE_W_OR_X  OFF)
++
+ else()
+   message(FATAL_ERROR "Unknown processor ${CMAKE_SYSTEM_PROCESSOR}")
+ endif()
+@@ -332,7 +361,15 @@
+   set(HAVE_SYS_SOCKET_H ON)
+ endif()
+ 
+-set(C_PER_PAGE_W_OR_X ON)
++if (NOT C_TARGET_CPU_ARM32)
++  # Left OFF for the 3DS (set explicitly above, in the processor-detection
++  # block) - this line used to run unconditionally and would otherwise
++  # clobber that back to ON here, silently undoing the decision to keep
++  # the JIT cache permanently RWX instead of toggling per page. Found by
++  # reading this file in full, not by assumption - the override wasn't
++  # obvious from the processor-detection block alone.
++  set(C_PER_PAGE_W_OR_X ON)
++endif()
+ 
+ option(OPT_OPENGL "Enable OpenGL render backend" ON)
+ if (OPT_OPENGL)
