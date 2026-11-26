@@ -59,8 +59,8 @@ set(CTR_DEFAULT_ICON "$ENV{DEVKITPRO}/libctru/default_icon.png")
 
 add_custom_command(TARGET hello POST_BUILD
   COMMAND "${SMDHTOOL}" --create
-          "DOSBox-3DS (toolchain test)"
-          "Fase 0 pipeline smoke test - not the emulator"
+          "DOSBox-3DS toolchain test"
+          "Fase 0 pipeline smoke test, not the emulator"
           "dosbox-3ds migration"
           "${CTR_DEFAULT_ICON}"
           "$<TARGET_FILE_DIR:hello>/hello.smdh"
